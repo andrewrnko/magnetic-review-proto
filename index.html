@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d0d0d">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 20 20%22%3E%3Crect width=%2220%22 height=%2220%22 fill=%22%230d0d0d%22/%3E%3Crect x=%222%22 y=%222%22 width=%225%22 height=%224%22 fill=%22%23ff2d2d%22/%3E%3Crect x=%2213%22 y=%222%22 width=%225%22 height=%224%22 fill=%22%23ff2d2d%22/%3E%3Cpath d=%22M2 8h5v5a3 3 0 0 0 6 0V8h5v5a8 8 0 0 1-16 0z%22 fill=%22%23f2f2f2%22/%3E%3C/svg%3E">
+<title>Magnetic Review</title>
+<style>
+@font-face { font-family: "BDO Grotesk"; src: url("fonts/BDOGrotesk-Regular.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "BDO Grotesk"; src: url("fonts/BDOGrotesk-Medium.woff2") format("woff2"); font-weight: 500 700; font-display: swap; }
+@font-face { font-family: "Geist Mono"; src: url("fonts/GeistMono-Latin.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+:root {
+  --bg: #0d0d0d; --panel: #111; --row: #0f0f0f; --ink: #f2f2f2; --fg2: #a3a3a3; --fg3: #6b6b6b;
+  --line: rgba(255,255,255,.08); --line2: rgba(255,255,255,.12); --hue: #ff2d2d; --hue-deep: #a32424; --ok: #3dd68c;
+  --ease: cubic-bezier(.22,.8,.24,1); --sans: "BDO Grotesk", ui-sans-serif, system-ui, sans-serif; --mono: "Geist Mono", ui-monospace, monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; background: #050505; color: var(--ink); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+.mono { font-family: var(--mono); font-size: 11px; letter-spacing: .02em; text-transform: uppercase; }
+
+/* Phone frame on desktop, full screen on a phone */
+.stage { height: 100%; display: grid; place-items: center; }
+.phone { position: relative; width: 100%; height: 100%; background: var(--bg); overflow: hidden; display: flex; flex-direction: column; }
+@media (min-width: 600px) { .phone { width: 402px; height: min(874px, calc(100vh - 32px)); border: 1px solid var(--line2); } }
+
+.dot { width: 6px; height: 6px; border-radius: 50%; background: var(--hue); display: inline-block; }
+.seg { position: absolute; z-index: 30; left: 50%; transform: translateX(-50%); bottom: calc(max(14px, env(safe-area-inset-bottom)) + 0px); display: flex; border: 1px solid var(--line2); background: rgba(13,13,13,.92); }
+.seg button { padding: 8px 12px; color: var(--fg3); }
+.seg button[aria-pressed="true"] { color: var(--ink); box-shadow: inset 0 -2px 0 var(--hue); }
+
+/* Feed */
+.feed { flex: 1; overflow-y: auto; scroll-snap-type: y mandatory; scrollbar-width: none; overscroll-behavior: contain; }
+.feed::-webkit-scrollbar { display: none; }
+.reel { position: relative; height: 100%; scroll-snap-align: start; scroll-snap-stop: always; background: #000; overflow: hidden; }
+.reel video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.shade { position: absolute; inset: auto 0 0 0; height: 46%; background: linear-gradient(to top, rgba(0,0,0,.88), rgba(0,0,0,.4) 55%, transparent); pointer-events: none; }
+.pill { padding: 5px 7px; background: rgba(13,13,13,.8); border: 1px solid var(--line2); display: inline-flex; align-items: center; gap: 6px; }
+.pill.hot { border-color: rgba(255,45,45,.55); color: #ffb3b3; }
+.pill.ok { border-color: rgba(61,214,140,.5); color: #9ff0c8; }
+.paused { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; opacity: 0; transition: opacity .2s; }
+.reel.is-paused .paused { opacity: 1; }
+.paused span { width: 64px; height: 64px; display: grid; place-items: center; background: rgba(0,0,0,.45); }
+
+.meta { position: absolute; z-index: 5; left: 16px; right: 84px; bottom: calc(max(16px, env(safe-area-inset-bottom)) + 52px); }
+.who { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.av { width: 28px; height: 28px; flex: none; display: grid; place-items: center; background: var(--hue-deep); color: #fff; font-family: var(--mono); font-size: 10px; }
+.av.me { background: var(--ink); color: #000; }
+.who b { font-weight: 500; font-size: 15px; }
+.title { font-size: 15px; line-height: 1.3; color: var(--ink); }
+.sub { margin-top: 6px; font-size: 13px; color: var(--fg2); }
+.changed { margin-top: 10px; border-left: 2px solid var(--hue); padding: 4px 0 4px 10px; font-size: 13px; color: var(--ink); }
+.changed .mono { color: var(--fg3); display: block; margin-bottom: 4px; }
+.changed li { list-style: none; color: var(--fg2); }
+.changed li::before { content: "✓ "; color: var(--ok); }
+
+.rail { position: absolute; z-index: 6; right: 10px; bottom: calc(max(16px, env(safe-area-inset-bottom)) + 52px); display: flex; flex-direction: column; align-items: center; gap: 18px; }
+.ra { text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: 5px; font-size: 12px; color: var(--ink); text-shadow: 0 1px 2px rgba(0,0,0,.6); }
+.ra .ic { width: 50px; height: 50px; display: grid; place-items: center; background: rgba(13,13,13,.55); border: 1px solid var(--line2); }
+.ra.approve .ic { background: var(--ink); border-color: var(--ink); color: #000; }
+.ra.approve.done .ic { background: var(--ok); border-color: var(--ok); }
+.ra.sound .ic { width: 40px; height: 40px; }
+.ra:active .ic { transform: scale(.94); }
+
+/* Bottom sheet (Instagram-style comments) */
+.scrim { position: absolute; inset: 0; z-index: 40; background: rgba(0,0,0,.5); opacity: 0; pointer-events: none; transition: opacity .25s var(--ease); }
+.scrim.on { opacity: 1; pointer-events: auto; }
+.sheet { position: absolute; z-index: 41; left: 0; right: 0; bottom: 0; height: 68%; background: var(--panel); border-top: 1px solid var(--line2); display: flex; flex-direction: column;
+  transform: translateY(100%); transition: transform .32s var(--ease); }
+.sheet.on { transform: none; }
+.grab { width: 36px; height: 4px; background: var(--line2); margin: 8px auto 6px; border-radius: 2px; }
+.sh-head { padding: 4px 16px 12px; text-align: center; border-bottom: 1px solid var(--line); }
+.sh-head b { font-weight: 500; font-size: 15px; }
+.sh-head .mono { display: block; margin-top: 4px; color: var(--fg3); }
+.list { flex: 1; overflow-y: auto; padding: 14px 16px; display: flex; flex-direction: column; gap: 16px; }
+.c { display: flex; gap: 10px; }
+.c .body { flex: 1; min-width: 0; }
+.c .line1 { font-size: 13px; color: var(--fg3); }
+.c .line1 b { color: var(--ink); font-weight: 500; margin-right: 6px; }
+.c p { font-size: 15px; line-height: 1.35; margin-top: 2px; word-wrap: break-word; }
+.c .res { margin-top: 4px; font-size: 12px; color: var(--ok); }
+.empty { margin: auto; text-align: center; color: var(--fg3); font-size: 14px; line-height: 1.5; }
+.quick { display: flex; gap: 6px; padding: 10px 16px 0; overflow-x: auto; scrollbar-width: none; }
+.quick button { flex: none; padding: 7px 10px; border: 1px solid var(--line2); color: var(--fg2); font-size: 13px; }
+.composer { display: flex; align-items: center; gap: 10px; padding: 10px 16px calc(max(10px, env(safe-area-inset-bottom)) + 2px); border-top: 1px solid var(--line); margin-top: 10px; }
+.composer input { flex: 1; min-width: 0; height: 42px; background: var(--row); border: 1px solid var(--line2); color: var(--ink); font: 16px var(--sans); padding: 0 12px; outline: none; }
+.composer input:focus { border-color: var(--ink); }
+.composer button { height: 42px; padding: 0 14px; background: var(--ink); color: #000; font-weight: 500; }
+.composer button:disabled { opacity: .35; }
+.sh-foot { padding: 0 16px 12px; }
+.sh-foot button { width: 100%; height: 44px; border: 1px solid rgba(255,45,45,.55); color: #ffb3b3; }
+
+/* End card + toast */
+.endcard { height: 100%; scroll-snap-align: start; display: grid; place-items: center; text-align: center; padding: 32px; }
+.endcard h2 { font-weight: 500; font-size: 28px; letter-spacing: -.04em; }
+.endcard p { margin-top: 8px; color: var(--fg2); font-size: 15px; }
+.endcard .mono { color: var(--fg3); margin-bottom: 14px; display: inline-flex; gap: 6px; align-items: center; }
+.reset { margin-top: 22px; padding: 10px 14px; border: 1px solid var(--line2); color: var(--fg2); font-size: 14px; }
+.toast { position: absolute; z-index: 60; left: 16px; right: 16px; top: calc(max(12px, env(safe-area-inset-top)) + 4px); padding: 12px 14px; background: var(--ink); color: #000; font-size: 14px;
+  transform: translateY(-12px); opacity: 0; transition: all .25s var(--ease); pointer-events: none; display: flex; gap: 8px; align-items: center; }
+.toast.on { transform: none; opacity: 1; }
+.ring { position: absolute; inset: 0; display: grid; place-items: center; z-index: 7; background: rgba(0,0,0,.55); text-align: center; }
+.ring .mono { color: var(--fg2); margin-top: 12px; display: block; }
+.spin { width: 28px; height: 28px; border: 2px solid var(--line2); border-top-color: var(--hue); border-radius: 50%; animation: s 0.9s linear infinite; margin: 0 auto; }
+@keyframes s { to { transform: rotate(360deg); } }
+.prog { position: absolute; z-index: 6; left: 0; right: 0; bottom: 0; height: 2px; background: rgba(255,255,255,.15); }
+.prog i { display: block; height: 100%; width: 0; background: var(--ink); }
+</style>
+</head>
+<body>
+<div class="stage"><div class="phone" id="app">
+  <main class="feed" id="feed" aria-label="Reels"></main>
+  <div class="seg mono" role="group" aria-label="Prototype view">
+    <button id="vClient" aria-pressed="true">Client</button>
+    <button id="vMe" aria-pressed="false">Me</button>
+  </div>
+  <div class="scrim" id="scrim"></div>
+  <section class="sheet" id="sheet" aria-label="Comments">
+    <div class="grab"></div>
+    <div class="sh-head"><b id="shTitle">Comments</b><span class="mono" id="shSub">Tell us what to change</span></div>
+    <div class="list" id="list"></div>
+    <div class="quick" id="quick"></div>
+    <form class="composer" id="form"><input id="input" autocomplete="off" placeholder="Add a comment..." aria-label="Comment"><button id="send" disabled>Post</button></form>
+    <div class="sh-foot" id="shFoot" hidden><button id="reqBtn">Send notes back for changes</button></div>
+  </section>
+  <div class="toast" id="toast"></div>
+</div></div>
+
+<script>
+/* Prototype only. Two views over one shared state (saved in this browser):
+   Client = one client's portal (Promo Box). Me = Andrew, every client, every new reel.
+   Comments are plain text like Instagram: no timestamps, no frame tracking. */
+const CLIENTS = { gr: { name: 'got rot?', ini: 'GR' }, pb: { name: 'Promo Box', ini: 'PB' }, eys: { name: 'Elite Yard Solutions', ini: 'EY' }, ar: { name: 'RubashkaRealtor', ini: 'AR' } }
+const SEED = () => ({
+  reels: [
+    { id: 'pb-emb', client: 'pb', title: 'Embroidery, start to finish', v: 1, src: { 1: 'media/pb-embroidery-v1', 2: 'media/pb-embroidery-v2' }, state: 'client', comments: [], changed: [] },
+    { id: 'pb-barcelo', client: 'pb', title: 'Barceló wrap reveal', v: 1, src: { 1: 'media/pb-barcelo' }, state: 'client', comments: [], changed: [] },
+    { id: 'pb-tires', client: 'pb', title: 'Found your branding under the tires', v: 1, src: { 1: 'media/pb-tires' }, state: 'client', comments: [], changed: [] },
+    { id: 'gr-buyer', client: 'gr', title: 'If I was a buyer I would not buy it', v: 1, src: { 1: 'media/gr-buyer' }, state: 'new', comments: [], changed: [] },
+    { id: 'eys-flags', client: 'eys', title: '2 red flags when hiring a fence company', v: 1, src: { 1: 'media/eys-redflags' }, state: 'new', comments: [], changed: [] },
+    { id: 'ar-lucid', client: 'ar', title: 'Lucid listing walkthrough', v: 1, src: { 1: 'media/ar-lucid' }, state: 'new', comments: [], changed: [] },
+  ],
+})
+const KEY = 'mag-review-proto-v1'
+let S = (() => { try { return JSON.parse(localStorage.getItem(KEY)) || SEED() } catch { return SEED() } })()
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)) } catch {} }
+let view = 'client', openId = null, muted = true
+
+const $ = (id) => document.getElementById(id)
+const feed = $('feed')
+const esc = (t) => t.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c])
+const ago = (ms) => { const m = Math.round((Date.now() - ms) / 60000); return m < 1 ? 'now' : m < 60 ? m + 'm' : Math.round(m / 60) + 'h' }
+
+/* What each view shows. Client: reels sent to Promo Box. Me: new reels + client notes + v2s back. */
+function items() {
+  if (view === 'client') return S.reels.filter((r) => r.client === 'pb' && ['client', 'client-v2', 'client-approved', 'client-changes'].includes(r.state))
+  return S.reels.filter((r) => ['new', 'v2', 'client-changes', 'recut'].includes(r.state) )
+}
+const icon = {
+  check: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2.2"/></svg>',
+  bubble: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>',
+  muted: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 9h4l5-4v14l-5-4H4z" stroke="currentColor" stroke-width="1.7"/><path d="M17 9l4 6M21 9l-4 6" stroke="currentColor" stroke-width="1.7"/></svg>',
+  sound: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 9h4l5-4v14l-5-4H4z" stroke="currentColor" stroke-width="1.7"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12" stroke="currentColor" stroke-width="1.7"/></svg>',
+  down: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 4v11m0 0l-4.5-4.5M12 15l4.5-4.5M5 19.5h14" stroke="currentColor" stroke-width="1.8"/></svg>',
+  play: '<svg width="28" height="28" viewBox="0 0 24 24"><path d="M7 4.5v15l13-7.5z" fill="#fff"/></svg>',
+}
+
+function render() {
+  const list = items()
+  $('app').classList.toggle('my', view === 'me')
+  feed.innerHTML = list.map((r) => {
+    const cl = CLIENTS[r.client]
+    const n = r.comments.length
+    const approveWord = view === 'client' ? (r.state === 'client-approved' ? 'Approved' : 'Approve') : 'Send'
+    return `<article class="reel" data-id="${r.id}">
+      <video src="${r.src[r.v] || r.src[1]}.mp4" poster="${r.src[r.v] || r.src[1]}.jpg" playsinline loop muted preload="metadata"></video>
+      <div class="paused"><span>${icon.play}</span></div>
+      <div class="shade"></div>
+      ${r.state === 'recut' ? '<div class="ring"><div><div class="spin"></div><span class="mono">AI is cutting V' + (r.v + 1) + '</span></div></div>' : ''}
+      <div class="meta">
+        <div class="who"><span class="av">${cl.ini}</span><b>${esc(cl.name)}</b></div>
+        <div class="title">${esc(r.title)}</div>
+        ${r.v > 1 && r.changed.length ? `<div class="changed"><span class="mono">What changed in V${r.v}</span><ul>${r.changed.map((t) => `<li>${esc(t)}</li>`).join('')}</ul></div>` : ''}
+        ${view === 'me' && r.state === 'client-changes' ? `<div class="sub">${n} ${n === 1 ? 'note' : 'notes'} from ${esc(cl.name)}. Open to read them.</div>` : ''}
+      </div>
+      <div class="rail">
+        <button class="ra approve ${r.state === 'client-approved' ? 'done' : ''}" data-act="approve" aria-label="${approveWord}"><span class="ic">${icon.check}</span>${approveWord}</button>
+        <button class="ra" data-act="comment" aria-label="Comments"><span class="ic">${icon.bubble}</span>${n || 'Notes'}</button>
+        <a class="ra" href="${r.src[r.v] || r.src[1]}.mp4" download="${r.id}-v${r.v}.mp4" aria-label="Download"><span class="ic">${icon.down}</span>Save</a>
+        <button class="ra sound" data-act="sound" aria-label="${muted ? 'Unmute' : 'Mute'}"><span class="ic">${muted ? icon.muted : icon.sound}</span></button>
+      </div>
+      <div class="prog"><i></i></div>
+    </article>`
+  }).join('') + endCard()
+  observe()
+}
+function endCard() {
+  const word = view === 'client' ? 'You are all caught up' : 'Nothing new'
+  const line = view === 'client' ? 'New reels show up here as soon as they are ready.' : 'New reels and changed versions land here.'
+  return `<section class="endcard"><div><span class="mono"><span class="dot" style="background:var(--ok)"></span>Done</span><h2>${word}</h2><p>${line}</p><button class="reset" data-act="reset">Reset the demo</button></div></section>`
+}
+
+/* Autoplay the reel on screen, pause the rest. Tap the video to pause. */
+let io
+function observe() {
+  io?.disconnect()
+  io = new IntersectionObserver((es) => es.forEach((e) => {
+    const v = e.target.querySelector('video'); if (!v) return
+    if (e.isIntersecting && e.intersectionRatio > 0.6) { v.muted = muted; v.play().catch(() => {}); e.target.classList.remove('is-paused') } else { v.pause() }
+  }), { root: feed, threshold: [0, 0.6, 1] })
+  feed.querySelectorAll('.reel').forEach((el) => {
+    io.observe(el)
+    const v = el.querySelector('video'), bar = el.querySelector('.prog i')
+    v.addEventListener('timeupdate', () => { if (v.duration) bar.style.width = (v.currentTime / v.duration) * 100 + '%' })
+  })
+}
+
+feed.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-act]')
+  const el = e.target.closest('.reel')
+  if (btn?.dataset.act === 'reset') { S = SEED(); save(); render(); feed.scrollTo({ top: 0 }); return }
+  if (!el) return
+  const r = S.reels.find((x) => x.id === el.dataset.id)
+  if (!btn) { const v = el.querySelector('video'); if (v.paused) { v.play(); el.classList.remove('is-paused') } else { v.pause(); el.classList.add('is-paused') } return }
+  if (btn.dataset.act === 'sound') { muted = !muted; feed.querySelectorAll('video').forEach((v) => (v.muted = muted)); btn.querySelector('.ic').innerHTML = muted ? icon.muted : icon.sound; return }
+  if (btn.dataset.act === 'comment') return openSheet(r.id)
+  if (btn.dataset.act === 'approve') approve(r, el)
+})
+
+function next(el) { const n = el.nextElementSibling; if (n) feed.scrollTo({ top: n.offsetTop, behavior: 'smooth' }) }
+function approve(r, el) {
+  if (view === 'client') {
+    r.state = 'client-approved'; save(); toast('Approved. It goes out on schedule.')
+  } else {
+    r.state = 'client'; r.client === 'pb' ? toast(`Sent to ${CLIENTS[r.client].name} for their ok.`) : toast(`Sent to ${CLIENTS[r.client].name}.`)
+    if (r.client !== 'pb') r.state = 'sent'
+    save()
+  }
+  const keep = el.offsetTop
+  setTimeout(() => { render(); const after = [...feed.querySelectorAll('.reel, .endcard')].find((x) => x.offsetTop >= keep) ; if (view === 'me' && after) feed.scrollTo({ top: after.offsetTop }); else next(feed.querySelector(`[data-id="${r.id}"]`) || feed.firstElementChild) }, 450)
+}
+
+/* Comments sheet */
+const QUICK = { client: ['Love it', 'Cut the start faster', 'Change the music', 'Fix the captions', 'Wrong logo'], me: ['Tighter open', 'Kill the dead air', 'Bigger captions', 'Swap the b-roll', 'Louder voice'] }
+function openSheet(id) {
+  openId = id
+  const r = S.reels.find((x) => x.id === id)
+  $('shTitle').textContent = 'Comments'
+  $('shSub').textContent = view === 'client' ? 'Tell us what to change' : (r.state === 'client-changes' ? `Notes from ${CLIENTS[r.client].name}` : 'Notes for the next cut')
+  drawList(r)
+  $('quick').innerHTML = QUICK[view].map((q) => `<button type="button">${q}</button>`).join('')
+  $('shFoot').hidden = !r.comments.some((c) => !c.done)
+  $('reqBtn').textContent = view === 'client' ? 'Send notes for changes' : (r.client === 'pb' && r.state === 'client-changes' ? 'Send notes to the AI editor' : 'Send notes back for changes')
+  $('scrim').classList.add('on'); $('sheet').classList.add('on')
+}
+function drawList(r) {
+  $('list').innerHTML = r.comments.length ? r.comments.map((c) => `<div class="c"><span class="av ${c.by === 'Andrew' ? 'me' : ''}">${c.by === 'Andrew' ? 'A' : CLIENTS[r.client].ini}</span><div class="body"><div class="line1"><b>${esc(c.by)}</b>${ago(c.at)}${c.v ? ' · V' + c.v : ''}</div><p>${esc(c.text)}</p>${c.done ? '<div class="res">Fixed in V' + (c.v + 1) + '</div>' : ''}</div></div>`).join('')
+    : `<div class="empty">No comments yet.<br>${view === 'client' ? 'Say what you would change, like you would on Instagram.' : 'Leave notes anywhere. No timestamps needed.'}</div>`
+  $('list').scrollTop = 1e6
+}
+function closeSheet() { $('scrim').classList.remove('on'); $('sheet').classList.remove('on'); $('input').blur(); openId = null }
+$('scrim').addEventListener('click', closeSheet)
+$('input').addEventListener('input', () => ($('send').disabled = !$('input').value.trim()))
+$('quick').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; $('input').value = b.textContent; $('send').disabled = false; $('input').focus() })
+$('form').addEventListener('submit', (e) => {
+  e.preventDefault(); const t = $('input').value.trim(); if (!t || !openId) return
+  const r = S.reels.find((x) => x.id === openId)
+  r.comments.push({ by: view === 'client' ? CLIENTS[r.client].name : 'Andrew', text: t, at: Date.now(), v: r.v })
+  $('input').value = ''; $('send').disabled = true; save(); drawList(r); $('shFoot').hidden = false
+  const el = feed.querySelector(`[data-id="${r.id}"] [data-act="comment"]`); if (el) el.lastChild.textContent = r.comments.length
+})
+$('reqBtn').addEventListener('click', () => {
+  const r = S.reels.find((x) => x.id === openId); if (!r) return
+  closeSheet()
+  if (view === 'client') { r.state = 'client-changes'; save(); toast('Sent. We will send back a new version.'); setTimeout(render, 300); return }
+  // Me: notes go to the AI editor; a changed version comes back (V2 is a real re-cut for the embroidery reel).
+  r.state = 'recut'; save(); render()
+  toast('Sent to the AI editor. V' + (r.v + 1) + ' comes back here.')
+  setTimeout(() => {
+    const open = r.comments.filter((c) => !c.done)
+    r.changed = open.map((c) => c.text); open.forEach((c) => (c.done = true))
+    r.v += 1; if (!r.src[r.v]) r.src[r.v] = r.src[r.v - 1]
+    r.state = 'v2'; save(); render(); toast(`V${r.v} is back: ${r.title}`)
+  }, 4500)
+})
+
+let tt
+function toast(t) { const el = $('toast'); el.textContent = t; el.classList.add('on'); clearTimeout(tt); tt = setTimeout(() => el.classList.remove('on'), 2200) }
+
+/* View switch (prototype only). A changed reel Andrew sends from "Me" lands back in the client's feed as V2. */
+function setView(v) {
+  view = v; $('vClient').setAttribute('aria-pressed', v === 'client'); $('vMe').setAttribute('aria-pressed', v === 'me')
+  S.reels.forEach((r) => { if (r.state === 'client' && r.v > 1) r.state = 'client-v2' })
+  closeSheet(); render(); feed.scrollTo({ top: 0 })
+}
+$('vClient').onclick = () => setView('client'); $('vMe').onclick = () => setView('me')
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSheet() })
+render()
+</script>
+</body>
+</html>
